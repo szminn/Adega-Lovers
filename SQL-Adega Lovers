@@ -1,0 +1,525 @@
+Construção Banco de Dados Relacional
+SET DATESTYLE TO postgres, DMY ;  
+
+-- Tabela Categoria
+DROP TABLE IF EXISTS categoria CASCADE;
+CREATE TABLE categoria (
+cod_catg INTEGER PRIMARY KEY,
+categoria VARCHAR (50) NOT NULL CHECK (categoria IN ('Bebida não alcoólica','Bebida alcoólica')),
+descr_catg VARCHAR(200));
+
+-- Tabela Produto
+DROP TABLE IF EXISTS produto CASCADE;
+CREATE TABLE produto (
+cod_prod INT  PRIMARY KEY,
+prod_nome VARCHAR(30),
+prod_descr VARCHAR(50),
+cod_catg INT, FOREIGN KEY (cod_catg) REFERENCES  categoria,
+qtd_medida NUMERIC(3,1),
+prod_medida VARCHAR(10),CHECK (prod_medida IN ('litro', 'litros', 'ml')),
+prod_marca VARCHAR (100));
+
+-- Tabela Fornecedor
+DROP TABLE IF EXISTS fornecedor CASCADE;
+CREATE TABLE fornecedor (
+cod_forn INT PRIMARY KEY,
+forn_tipo  CHAR(2) NOT NULL CHECK (forn_tipo IN ('PJ', 'PF')),
+forn_email VARCHAR(30),
+forn_fone NUMERIC(11),
+forn_end VARCHAR(100) ,
+forn_nome VARCHAR(100) NOT NULL);
+
+-- Tabela Fornecimento
+DROP TABLE IF EXISTS fornecimento CASCADE;
+CREATE TABLE fornecimento (
+    id_fornecto INT  PRIMARY KEY, 
+    num_notafiscal_compra NUMERIC(50),
+    cod_forn  INTEGER, FOREIGN KEY (cod_forn) REFERENCES  fornecedor,
+    cod_prod  INTEGER, FOREIGN KEY (cod_prod) REFERENCES  produto,
+    dt_entrada DATE,
+    num_lote VARCHAR (30),
+    dt_validade DATE,
+    qtd_prod NUMERIC(7,2),
+    valor_custo_uni NUMERIC(7,2),
+    valor_total NUMERIC(7,2)
+);
+-- Tabela Estoque
+DROP TABLE IF EXISTS estoque CASCADE;
+CREATE TABLE estoque (
+id_estoque INT  PRIMARY KEY,
+cod_prod INT, FOREIGN KEY (cod_prod) REFERENCES  produto ,
+dt_hora_controle TIMESTAMP NOT NULL,
+qtd_entrada INTEGER NOT NULL,
+qtd_saida INTEGER NOT NULL,
+qtd_total INTEGER NOT NULL,
+end_estoque VARCHAR(100) NOT NULL,
+estoque_min integer,
+estoque_max integer
+);
+
+-- Tabela Pedido
+DROP TABLE IF EXISTS pedido CASCADE;
+CREATE TABLE pedido (
+id_pedido INT PRIMARY KEY,
+num_notafiscal_venda CHAR(50),
+dt_hora_pedido TIMESTAMP NOT NULL,
+valor_total NUMERIC(7,2));
+
+-- Tabela Item
+DROP TABLE IF EXISTS item CASCADE;
+CREATE TABLE item (
+id_item integer primary key,
+    id_pedido INTEGER, FOREIGN KEY (id_pedido) REFERENCES  pedido  ,
+	cod_prod  INTEGER,FOREIGN KEY (cod_prod) REFERENCES  produto ,
+    quantidade NUMERIC(7,2),
+    valor_venda_uni NUMERIC(7,2),
+num_notafiscal_venda NUMERIC(7,2));
+
+-- Tabela de Troca
+DROP TABLE IF EXISTS troca CASCADE;
+CREATE TABLE troca (
+    id_troca INT PRIMARY KEY,
+    qtd_prod NUMERIC(7,2),
+    descr_troca VARCHAR(100),
+    tipo_troca CHAR (4) CHECK( tipo_troca IN ('forn', 'cli')),
+    cod_prod INT, FOREIGN KEY (cod_prod) REFERENCES  produto  );
+
+-- Tabela de Descarte
+DROP TABLE IF EXISTS descarte CASCADE;
+CREATE TABLE descarte (
+    id_desc  INT PRIMARY KEY,
+    cod_prod INT, FOREIGN KEY (cod_prod) REFERENCES  produto,
+    descr_desc VARCHAR(50),
+    qtd_prod NUMERIC(7,2));
+
+-- Tabela de Devolucao 
+DROP TABLE IF EXISTS devolucao CASCADE;
+CREATE TABLE devolucao (
+    id_dev INT  PRIMARY KEY,
+    cod_prod INT , FOREIGN KEY (cod_prod) REFERENCES  produto  ,
+    tipo_devo CHAR NOT NULL CHECK (tipo_devo IN ('forn', 'cli')),
+    descr_devo VARCHAR(50),
+    qtd_prod NUMERIC(7,2)
+);
+
+-- População tabela Categoria
+INSERT INTO categoria VALUES ( 01, 'Bebida não alcoólica', 'Água mineral,Água mineral com gás, Água de coco, Água tônica, Chá Gelado, Energético, Groselha, Isotônico, Refrigerante, Suco e Cerveja sem alcool.') ; 	
+INSERT INTO categoria VALUES ( 02, 'Bebida alcoólica','Absinto, Cachaça, Gim, Rum, Whisky, Vodka, Cerveja, Vinho, Champanhe, Cidra, Espumante, Conhaque, Saquê, Tequila, Licor') ; 
+SELECT * FROM categoria;
+
+Requisito 01- Cadastrar produtos. SQL
+
+-- População tabela produto (categoria 1)
+ALTER TABLE produto ADD COLUMN prod_marca VARCHAR (100);
+ALTER TABLE produto ALTER COLUMN qtd_medida TYPE NUMERIC (4,1) 
+INSERT INTO produto VALUES ( 100,'ÁGUA','ÁGUA MINERAL',1 ,500,'ml','BONAFONT') ; 
+INSERT INTO produto VALUES ( 101,'ÁGUA','ÁGUA MINERAL COM GÁS',1 ,500, 'ml', 'BONAFONT') ; 
+INSERT INTO produto VALUES ( 102,'ÁGUA','ÁGUA MINERAL',1 ,1, 'litro','BONAFONT') ;  
+INSERT INTO produto VALUES ( 103,'ÁGUA','ÁGUA MINERAL COM GÁS',1,1, 'litro', 'BONAFONT') ;  
+INSERT INTO produto VALUES ( 104,'ÁGUA DE COCO','ÁGUA DE COCO',1 ,200, 'ml','DU COCO') ;
+INSERT INTO produto VALUES ( 105,'ÁGUA DE COCO','ÁGUA DE COCO',1 ,1, 'litro', 'DU COCO') ;
+INSERT INTO produto VALUES ( 106,'ÁGUA TÔNICA','ÁGUA TÔNICA',1,350,'ml', 'ANTARCTICA') ;  
+INSERT INTO produto VALUES ( 107,'ÁGUA TÔNICA','ÁGUA TÔNICA',1,350 ,'ml' 'Schweppes') ;
+INSERT INTO produto VALUES ( 108,'CHÁ GELADO','SABOR LIMÃO',1,450 ,'ml', 'CHÁ ICE TEA LEÃO') ;  
+INSERT INTO produto VALUES ( 109,'CHÁ GELADO','SABOR MATTE',1, 450, 'ml', 'CHÁ ICE TEA LEÃO') ; 
+INSERT INTO produto VALUES ( 110, 'CHÁ GELADO','SABOR PESSEGO',1,450 ,'ml', 'CHÁ ICE TEA LEÃO') ;
+
+INSERT INTO produto VALUES ( 111,'ENERGÉTICO','Bebida Energética',1, 250, 'ml', 'RED BULL ENERGY DRINK');
+INSERT INTO produto VALUES ( 112, 'ENERGÉTICO','Bebida Energética',1,473,'ml','Monster Energy');
+INSERT INTO produto VALUES ( 113, 'ENERGÉTICO','Bebida Energética com Guaraná',1, 1, 'litro', 'Fusion Energy Drink');
+INSERT INTO produto VALUES ( 114, 'ENERGÉTICO','Bebida Energética com Guaraná',1, 2, 'litros','Long One');
+INSERT INTO produto VALUES ( 115, 'ENERGÉTICO','Bebida Energética com Guaraná',1, 2, 'litros', 'VIBE ENERGY'); 
+INSERT INTO produto VALUES ( 116, 'GROSELHA','Xarope De Groselha',1, 900, 'ml','Milani');
+INSERT INTO produto VALUES ( 117,'Isotônico','Isotonico Mix de Frutas',1, 500, 'ml', 'Powerade');
+INSERT INTO produto VALUES ( 118, 'Isotônico','Isotonico Mix de Frutas',1, 500, 'ml', 'Powerade');
+INSERT INTO produto VALUES ( 119, 'Isotônico','Isotonico Sabor Uva',1, 500, 'ml', 'Powerade');
+INSERT INTO produto VALUES ( 120, 'Isotônico','Isotonico Sabor Limão',1, 500, 'ml', 'Powerade'); 
+
+INSERT INTO produto VALUES ( 121, 'Isotônico','Isotonico Sabor Morango',1, 500, 'ml', 'Powerade');  
+INSERT INTO produto VALUES ( 122, 'Isotônico','Isotonico Sabor Futas Cítricas',1, 500, 'ml', 'Powerade'); 
+INSERT INTO produto VALUES ( 123, 'Isotônico','Isotonico Sabor Laranja',1, 500, 'ml', 'Powerade'); 
+INSERT INTO produto VALUES ( 124, 'Isotônico','Isotonico Sabor Maracujá',1, 500, 'ml', 'Gatorade'); 
+INSERT INTO produto VALUES ( 125, 'Isotônico','Isotonico Sabor Tangerina',1, 500, 'ml','Gatorade');
+INSERT INTO produto VALUES ( 126, 'Isotônico','Isotonico Sabor Uva',1, 500, 'ml', 'Gatorade'); 
+INSERT INTO produto VALUES ( 127, 'Isotônico','Isotonico Sabor Limão',1, 500, 'ml','Gatorade'); 
+INSERT INTO produto VALUES ( 128, 'Isotônico','Isotonico Sabor Morango',1, 500, 'ml', 'Gatorade'); 
+INSERT INTO produto VALUES ( 129,  'Isotônico','Isotonico Sabor Futas Cítricas',1, 500, 'ml','Gatorade'); 
+INSERT INTO produto VALUES ( 130, 'Isotônico','Isotonico Sabor Maracujá',1, 500, 'ml', 'Gatorade'); 
+
+INSERT INTO produto VALUES ( 131, 'Isotônico','Isotonico Sabor Laranja',1, 500, 'ml', 'Gatorade');
+INSERT INTO produto VALUES ( 132, 'Refrigerante Lata','Sabor Cola',1, 350, 'ml','Coca-cola'); 
+INSERT INTO produto VALUES ( 133, 'Refrigerante Lata','Sabor Cola',1, 220, 'ml', 'Coca-cola'); ; 
+INSERT INTO produto VALUES ( 134, 'Refrigerante garrafa','Sabor Cola',1, 200, 'ml', 'Coca-cola'); 
+INSERT INTO produto VALUES ( 135, 'Refrigerante garrafa','Sabor Cola',1, 1.5, 'litro', 'Coca-cola');  
+INSERT INTO produto VALUES ( 136, 'Refrigerante garrafa','Sabor Cola',1, 2, 'litros', 'Coca-cola');  
+INSERT INTO produto VALUES ( 137, 'Refrigerante garrafa','Sabor Cola',1, 600, 'ml', 'Coca-cola'); 
+INSERT INTO produto VALUES ( 138, 'Refrigerante Lata','Sabor Laranja',1, 350, 'ml', 'Fanta'); 
+INSERT INTO produto VALUES ( 139, 'Refrigerante Lata','Sabor Laranja',1, 220, 'ml', 'Fanta'); ; 
+INSERT INTO produto VALUES ( 140, 'Refrigerante garrafa','Sabor Laranja',1, 200, 'ml', 'Fanta'); 
+
+INSERT INTO produto VALUES ( 141, 'Refrigerante garrafa','Sabor Laranja',1, 1.5, 'litro', 'Fanta');
+INSERT INTO produto VALUES ( 142, 'Refrigerante garrafa','Sabor Laranja',1, 2, 'litros','Fanta');   
+INSERT INTO produto VALUES ( 144,'Refrigerante garrafa','Sabor Laranja',1, 600, 'ml', 'Fanta');
+INSERT INTO produto VALUES ( 145,'Refrigerante Lata','Sabor Uva',1, 350, 'ml', 'Fanta'); 
+INSERT INTO produto VALUES ( 146,'Refrigerante Lata','Sabor Uva',1, 220, 'ml', 'Fanta'); ; 
+INSERT INTO produto VALUES ( 147,'Refrigerante garrafa','Sabor Uva',1, 200, 'ml', 'Fanta'); 
+INSERT INTO produto VALUES ( 148,'Refrigerante garrafa','Sabor Uva',1, 1.5, 'litro', 'Fanta');
+INSERT INTO produto VALUES ( 149,'Refrigerante garrafa','Sabor Uva',1, 2, 'litros', 'Fanta');   
+INSERT INTO produto VALUES ( 150,'Refrigerante garrafa','Sabor Uva',1, 600, 'ml', 'Fanta');
+
+INSERT INTO produto VALUES ( 151,'Refrigerante Lata','Sabor Guaraná',1, 350, 'ml', ' Fanta '); 
+INSERT INTO produto VALUES ( 152,'Refrigerante Lata','Sabor Guaraná',1, 220, 'ml', 'Fanta'); ; 
+INSERT INTO produto VALUES ( 153,'Refrigerante garrafa','Sabor Guaraná',1,200,'ml','Fanta'); 
+INSERT INTO produto VALUES ( 154,'Refrigerante garrafa','Sabor Guaraná',1, 1.5, 'litro', 'Fanta');
+INSERT INTO produto VALUES ( 155,'Refrigerante garrafa','Sabor Guaraná',1, 2, 'litros','Fanta');   
+INSERT INTO produto VALUES ( 156,'Refrigerante garrafa','Sabor Guaraná',1, 600, 'ml', ' Antarctica Fanta');
+INSERT INTO produto VALUES ( 157,'Refrigerante Lata','Sabor Limão',1, 350, 'ml', 'Sprite'); 
+INSERT INTO produto VALUES ( 158,'Refrigerante Lata','Sabor Limão',1, 220, 'ml', 'Sprite'); ; 
+INSERT INTO produto VALUES ( 159,'Refrigerante garrafa','Sabor Limão',1, 200, 'ml', 'Sprite'); 
+INSERT INTO produto VALUES ( 160,'Refrigerante garrafa','Sabor Limão',1, 1.5, 'litro','Sprite');
+
+INSERT INTO produto VALUES ( 161,'Refrigerante garrafa','Sabor Limão',1, 2, 'litros', 'Sprite');   
+INSERT INTO produto VALUES ( 162,'Refrigerante garrafa','Sabor Limão',1, 600, 'ml', 'Sprite');
+INSERT INTO produto VALUES ( 163,'Refrigerante garrafa','Sabor Limão',1, 200, 'ml', 'Sprite'); 
+INSERT INTO produto VALUES ( 164,'Refrigerante garrafa','Sabor Limão',1, 1.5, 'litro', 'Sprite');
+INSERT INTO produto VALUES ( 165,'Refrigerante garrafa','Sabor Limão',1, 2, 'litros', 'Sprite');   
+INSERT INTO produto VALUES ( 166,'Refrigerante garrafa','Sabor Limão',1, 600, 'ml', 'Sprite');
+INSERT INTO produto VALUES ( 167,'Refrigerante Lata','Sabor Guaraná',1, 350, 'ml', 'Antarctica'); 
+INSERT INTO produto VALUES ( 168,'Refrigerante Lata','Sabor Guaraná',1, 220, 'ml', 'Antarctica'); ; 
+INSERT INTO produto VALUES ( 169,'Refrigerante garrafa','Sabor Guaraná',1, 200, 'ml', 'Antarctica');
+INSERT INTO produto VALUES ( 170,'Refrig.garrafa Retorn','Sabor Laranja',1, 2, 'litros', 'Fanta');
+
+INSERT INTO produto VALUES ( 171,'Refrigerante garrafa','Sabor Limão',1, 1.5, 'litro', 'Antarctica');
+INSERT INTO produto VALUES ( 172,'Refrigerante garrafa','Sabor Limão',1, 2, 'litros', 'Antarctica');   
+INSERT INTO produto VALUES ( 173,'Refrigerante garrafa','Sabor Limão',1, 600, 'ml', 'Antarctica');
+INSERT INTO produto VALUES ( 174,'Refrigerante Lata','Sabor Tutti Frutti',1, 350, 'ml', 'Itubaína'); 
+INSERT INTO produto VALUES ( 175,'Refrigerante garrafa', 'Sabor Tutti Frutti',1, 2, 'litro', 'Itubaína'); ; 
+INSERT INTO produto VALUES ( 176,'Refrigerante garrafa de vidro','Sabor Tutti Frutti',1, 600, 'ml', 'Itubaína');
+INSERT INTO produto VALUES ( 177,'Refrig.garrafa Retorn','Sabor Cola',1, 2, 'litros', 'Coca-cola');
+INSERT INTO produto VALUES ( 178,'Refrig. gar. de vidro Retorn','Sabor Guaraná',1, 2, 'litros', 'Antarctica');
+INSERT INTO produto VALUES ( 179,'Refrig. gar. de vidro Retorn','Sabor Uva',1, 2, 'litros', 'Fanta');
+INSERT INTO produto VALUES ( 180,'Refrig. gar. de vidro Retorn','Sabor Cola',1, 2, 'litros', 'Coca-cola');
+
+INSERT INTO produto VALUES ( 181,'Refrigerante garrafa','Sabor Uva',1, 350, 'ml', 'DOLLY'); 
+INSERT INTO produto VALUES ( 182,'Refrigerante garrafa','Sabor Uva',1, 2, 'litros','DOLLY');
+INSERT INTO produto VALUES ( 183,'Refrigerante garrafa','Sabor Limão',1, 350, 'ml', 'DOLLY'); 
+INSERT INTO produto VALUES ( 184,'Refrigerante garrafa','Sabor Limão',1, 2, 'litros', 'DOLLY');
+INSERT INTO produto VALUES ( 185,'Refrigerante garrafa','Sabor Laranja',1, 350, 'ml', 'DOLLY'); 
+INSERT INTO produto VALUES ( 186,'Refrigerante garrafa','Sabor Laranja',1, 2, 'litros', 'DOLLY');
+INSERT INTO produto VALUES ( 187,'Refrigerante garrafa','Sabor Guaraná',1, 350, 'ml', 'DOLLY'); 
+INSERT INTO produto VALUES ( 188,'Refrigerante garrafa','Sabor Guaraná',1, 2, 'litros', 'DOLLY');
+INSERT INTO produto VALUES ( 189,'Refrigerante garrafa','Sabor Cola',1, 350, 'ml', 'DOLLY'); 
+INSERT INTO produto VALUES ( 190,'Refrigerante garrafa','Sabor Cola',1, 2, 'litros', 'DOLLY');
+
+INSERT INTO produto VALUES ( 191,'Suco de caixinha','Néctar Uva',1, 200, 'ml', 'Del Valle Kapo'); 
+INSERT INTO produto VALUES ( 192,'Suco de caixa','Néctar Uva',1, 1, 'litro', 'Del Valle');
+INSERT INTO produto VALUES ( 193,'Suco de garrafa','Néctar Uva',1, 1.5, 'litro', 'Del Valle'); 
+INSERT INTO produto VALUES ( 194,'Suco de garrafa','Néctar Uva',1, 450, 'ml', 'Del Valle');
+INSERT INTO produto VALUES ( 195,'Suco de Lata','Néctar Uva',1, 290, 'ml', 'Del Valle'); 
+INSERT INTO produto VALUES ( 196,'Suco de caixinha','Néctar Limão',1, 200, 'ml', 'Del Valle Kapo'); 
+INSERT INTO produto VALUES ( 197,'Suco de caixa','Néctar Limão',1, 1, 'litro','Del Valle');
+INSERT INTO produto VALUES ( 198,'Suco de garrafa','Néctar Limão',1, 1.5, 'litro', 'Del Valle'); 
+INSERT INTO produto VALUES ( 199,'Suco de garrafa','Néctar Limão',1, 450, 'ml', 'Del Valle');
+INSERT INTO produto VALUES ( 200,'Suco de Lata','Néctar Limão',1, 290, 'ml', 'Del Valle'); 
+
+INSERT INTO produto VALUES ( 201,'Suco de caixinha','Néctar Morango',1, 200, 'ml', 'Del Valle Kapo'); 
+INSERT INTO produto VALUES ( 202,'Suco de caixa','Néctar Morango',1, 1, 'litro', 'Del Valle');
+INSERT INTO produto VALUES ( 203,'Suco de garrafa','Néctar Morango',1, 1.5, 'litro', 'Del Valle'); 
+INSERT INTO produto VALUES ( 204,'Suco de garrafa','Néctar Morango',1, 450, 'ml','Del Valle');
+INSERT INTO produto VALUES ( 205,'Suco de Lata','Néctar Morango',1, 290, 'ml', 'Del Valle'); 
+INSERT INTO produto VALUES ( 206,'Suco de caixinha','Néctar Laranja',1, 200, 'ml', 'Del Valle Kapo'); 
+INSERT INTO produto VALUES ( 207,'Suco de caixa','Néctar Laranja',1, 1, 'litro', 'Del Valle');
+INSERT INTO produto VALUES ( 208,'Suco de garrafa','Néctar Laranja',1, 1.5, 'litro', 'Del Valle'); 
+INSERT INTO produto VALUES ( 209,'Suco de garrafa','Néctar Laranja',1, 450, 'ml', 'Del Valle');
+INSERT INTO produto VALUES ( 210,'Suco de Lata','Néctar Laranja',1, 290, 'ml', 'Del Valle'); 
+
+INSERT INTO produto VALUES ( 211,'Suco de caixinha','Néctar Abacaxi',1, 200, 'ml', 'Del Valle Kapo'); 
+INSERT INTO produto VALUES ( 212,'Suco de caixa','Néctar Abacaxi',1, 1, 'litro', 'Del Valle');
+INSERT INTO produto VALUES ( 213,'Suco de garrafa','Néctar Abacaxi',1, 1.5, 'litro', 'Del Valle'); 
+INSERT INTO produto VALUES ( 214,'Suco de garrafa','Néctar Abacaxi',1, 450, 'ml', 'Del Valle');
+INSERT INTO produto VALUES ( 215,'Suco de Lata','Néctar Abacaxi',1, 290, 'ml', 'Del Valle'); 
+INSERT INTO produto VALUES ( 216,'Suco de caixa','Néctar Pêssego',1, 1, 'litro', 'Del Valle');
+INSERT INTO produto VALUES ( 217,'Suco de Lata','Néctar Pêssego',1, 290, 'ml', 'Del Valle'); 
+INSERT INTO produto VALUES ( 218,'Suco de caixa','Néctar Caju',1, 1, 'litro', 'Del Valle');
+INSERT INTO produto VALUES ( 219,'Suco de Lata','Néctar Caju',1, 290, 'ml', 'Del Valle'); 
+INSERT INTO produto VALUES ( 220,'Suco de caixa','Néctar Manga',1, 1, 'litro', 'Del Valle');
+
+INSERT INTO produto VALUES ( 221,'Suco de Lata','Néctar Manga',1,290,'ml','Del Valle'); 
+INSERT INTO produto VALUES ( 222,'Suco de caixa','Néctar Maracujá',1, 1, 'litro', 'Del Valle');
+INSERT INTO produto VALUES ( 223,'Suco de Lata','Néctar Maracujá',1, 290, 'ml', 'Del Valle'); 
+INSERT INTO produto VALUES ( 224,'Suco de caixa','Néctar Goiaba',1, 1, 'litro', 'Del Valle');
+INSERT INTO produto VALUES ( 225,'Suco de Lata','Néctar Goiaba',1, 290, 'ml', 'Del Valle'); 
+INSERT INTO produto VALUES ( 226,'Suco de garrafa','Laranja Integral',1, 900, 'ml', 'Life');
+INSERT INTO produto VALUES ( 227,'Suco de garrafa','Laranja Integral',1, 300, 'ml', 'Life'); 
+INSERT INTO produto VALUES ( 228,'Suco de garrafa','Uva Integral',1, 900, 'ml', 'Life');
+INSERT INTO produto VALUES ( 229,'Suco de garrafa','Uva Integral',1, 300, 'ml', 'Life'); 
+INSERT INTO produto VALUES ( 230,'Suco de garrafa','Concentrado Uva Integral',1, 1.5, 'litro', 'Life');
+
+INSERT INTO produto VALUES ( 231,'Cerveja Long Neck','sem álcool 0,0%',1, 330, 'ml', 'Heineken'); 
+INSERT INTO produto VALUES ( 232,'Cerveja Long Neck','sem álcool 0,0%',1, 355, 'ml', 'Brahma'); 
+INSERT INTO produto VALUES ( 233,'Cerveja Long Neck','sem álcool 0,0%',1, 250, 'ml', 'Estrella'); 
+INSERT INTO produto VALUES ( 234,'Cerveja Long Neck','sem álcool 0,0%',1, 355, 'ml', 'Itaipava'); 
+INSERT INTO produto VALUES ( 235,'Cerveja Lata','sem álcool 0,0%',1, 350, 'ml', 'Heineken'); 
+INSERT INTO produto VALUES ( 236,'Cerveja Lata','sem álcool 0,0%',1, 350, 'ml', 'Brahma'); 
+INSERT INTO produto VALUES ( 237,'Cerveja Lata','sem álcool 0,0%',1, 330, 'ml', 'Estrella'); 
+INSERT INTO produto VALUES ( 238,'Cerveja Lata','sem álcool 0,0%',1, 350, 'ml', 'Itaipava'); 
+INSERT INTO produto VALUES ( 239,'Cerveja Lata','sem álcool 0,0%',1, 350, 'ml', 'Malta Pilsen'); 
+INSERT INTO produto VALUES ( 240,'Cerveja Lata','sem álcool 0,0%',1, 350, 'ml', 'Colônia Pilsen');
+-- CATEGORIA 2
+INSERT INTO produto VALUES ( 241,'Cerveja Long Neck','Premium Pilsen Lager',2, 330, 'ml', 'Heineken'); 
+INSERT INTO produto VALUES ( 242,'Cerveja Long Neck','Duplo Malte',2, 355, 'ml', 'Brahma'); 
+INSERT INTO produto VALUES ( 243,'Cerveja Long Neck','Pilsen Lager',2, 250, 'ml', 'Budweiser'); 
+INSERT INTO produto VALUES ( 244,'Cerveja Long Neck','Pilsen Puro Malte',2, 355, 'ml', 'Eisenbahn'); 
+
+INSERT INTO produto VALUES ( 245,'Cerveja Lata','Premium Pilsen Lager',2, 350, 'ml', 'Heineken'); 
+INSERT INTO produto VALUES ( 246,'Cerveja Lata','Duplo Malte',2, 350, 'ml', 'Brahma'); 
+INSERT INTO produto VALUES ( 247,'Cerveja Lata','Pilsen Puro Malte',2, 330, 'ml', 'Eisenbahn'); 
+INSERT INTO produto VALUES ( 248,'Cerveja Lata','Pilsen Lager',2, 350, 'ml', 'Itaipava'); 
+INSERT INTO produto VALUES ( 249,'Cerveja Lata','Pilsen Lager',2, 350, 'ml', 'Budweiser'); 
+INSERT INTO produto VALUES ( 250,'Cerveja Lata','Pilsen Lager',2, 350, 'ml', 'Amstel');
+INSERT INTO produto VALUES ( 251,'Cerveja Lata','Puro Malte',2, 350, 'ml', 'SKOL');
+
+INSERT INTO produto VALUES ( 252,'Cerveja garrafa','Premium Pilsen Lager',2, 600, 'ml', 'Heineken'); 
+INSERT INTO produto VALUES ( 253,'Cerveja garrafa','Duplo Malte',2, 600, 'ml', 'Brahma'); 
+INSERT INTO produto VALUES ( 254,'Cerveja garrafa','Cerveja antarctica original pilsen',2, 600, 'ml', 'Original'); 
+INSERT INTO produto VALUES ( 255,'Cerveja garrafa','Pilsen Puro Malte',2, 600, 'ml', 'Eisenbahn'); 
+INSERT INTO produto VALUES ( 256,'Cerveja garrafa','Pilsen Lager',2, 600, 'ml', 'Skol'); 
+INSERT INTO produto VALUES ( 257,'Cerveja garrafa','Pilsen Lager',2, 600, 'ml', 'Itaipava'); 
+
+INSERT INTO produto VALUES ( 258,'Cerveja garrafa','Pilsen Lager',2, 1, 'litro', 'Brahma'); 
+INSERT INTO produto VALUES ( 259,'Cerveja garrafa','Pilsen Lager',2, 1, 'litro', 'Itaipava'); 
+INSERT INTO produto VALUES ( 260,'Cerveja garrafa','Pilsen Lager',2, 1, 'litro', 'Skol');
+
+-- População tabela fornecedor 
+INSERT INTO fornecedor VALUES (1,'PJ', 'cdmooca@ambev.com.br ', 08008871111, 'Av. Presidente Wilson, 274 - Mooca, São Paulo - SP, 03107-900', 'AMBEV CDD MOOCA');
+INSERT INTO fornecedor VALUES (2,'PJ', 'vendas@femsa.com.br', 1136596356, 'Pc Agrícola La Paz Tristante, 35 - Industrial Anhangüera, 06276-035', 'COCA-COLA FEMSA SP');
+INSERT INTO fornecedor VALUES (3,'PJ', 'Vendas@pepsico.com.br', 25359470, 'R. Panambi, 191 - Cidade Industrial Satélite de São Paulo, Guarulhos - SP, 07224-130', 'PEPSICO DO BRASIL GRU');
+INSERT INTO fornecedor VALUES (4,'PJ', 'sac@distribuidorahideal.com.br', 26193222, 'Endereço: Rua Alberto Sampaio, 147, São Paulo – SP', 'DISTRIBUIDORA HIDEAL');
+INSERT INTO fornecedor VALUES (5,'PJ', 'vendas2@atacadao.com.br', 43903224, 'Av. Morvan Dias de Figueiredo, 6157, São Paulo - SP, 02170-901', 'ATACADAO');
+
+Requisito 02 - Permitir entrada de produtos pela Nota Fiscal e cupom fiscal. SQL
+
+-- População tabela fornecimento 
+INSERT INTO fornecimento VALUES (	5000	,	90000	,	4	,	101	,	'15/09/2021'	,	56983	,		'31/12/2022'	,	100	,	0.99	,	99.00	)	;
+INSERT INTO fornecimento VALUES (	5001	,	90000	,	4	,	103	,	'15/09/2021'	,	790012	,		'31/12/2022'	,	100	,	0.99	,	99.00	)	;
+INSERT INTO fornecimento VALUES (	5002	,	90000	,	4	,	110	,	'15/09/2021'	,	907652	,		'31/12/2022'	,	50	,	2.50	,	125.00	)	;
+INSERT INTO fornecimento VALUES (	5003	,	90000	,	4	,	125	,	'15/09/2021'	,	38945	,		'01/01/2024'	,	20	,	0.99	,	19.80	)	;
+INSERT INTO fornecimento VALUES (	5004	,	90000	,	4	,	122	,	'15/09/2021'	,	98542	,		'02/01/2024'	,	30	,	1.99	,	119.40	)	;
+INSERT INTO fornecimento VALUES (	5005	,	90000	,	4	,	120	,	'15/09/2021'	,	2398	,		'03/01/2024'	,	10	,	2.99	,	89.70	)	;
+INSERT INTO fornecimento VALUES (	5006	,	90000	,	4	,	127	,	'15/09/2021'	,	37494	,		'31/12/2022'	,	20	,	3.50	,	280.00	)	;
+INSERT INTO fornecimento VALUES (	5007	,	90000	,	4	,	107	,	'15/09/2021'	,	64832	,		'31/12/2022'	,	100	,	1.50	,	150.00	)	;
+INSERT INTO fornecimento VALUES (	5008	,	90000	,	4	,	106	,	'15/09/2021'	,	34937	,		'31/12/2023'	,	100	,	1.50	,	150.00	)	;
+INSERT INTO fornecimento VALUES (	5009	,	90000	,	4	,	109	,	'15/09/2021'	,	58490	,		'01/01/2024'	,	50	,	2.50	,	125.00	)	;
+INSERT INTO fornecimento VALUES (	5010	,	90000	,	4	,	140	,	'15/09/2021'	,	44312	,		'02/01/2023'	,	50	,	0.99	,	49.50	)	;
+INSERT INTO fornecimento VALUES (	5011	,	90000	,	4	,	142	,	'15/09/2021'	,	44315	,		'31/12/2022'	,	50	,	2.50	,	125.00	)	;
+INSERT INTO fornecimento VALUES (	5012	,	90001	,	2	,	132	,	'22/10/2021'	,	6732	,		'31/12/2022'	,	20	,	1.99	,	39.80	)	;
+INSERT INTO fornecimento VALUES (	5013	,	90001	,	2	,	130	,	'22/10/2021'	,	67543	,		'31/12/2022'	,	10	,	2.50	,	25.00	)	;
+INSERT INTO fornecimento VALUES (	5014	,	90001	,	2	,	129	,	'22/10/2021'	,	67351	,		'31/12/2022'	,	10	,	2.50	,	25.00	)	;
+INSERT INTO fornecimento VALUES (	5015	,	90001	,	2	,	125	,	'22/10/2021'	,	67198	,		'01/01/2023'	,	20	,	2.50	,	50.00	)	;
+INSERT INTO fornecimento VALUES (	5016	,	90001	,	2	,	212	,	'22/10/2021'	,	73820	,		'01/01/2023'	,	20	,	4.00	,	80.00	)	;
+INSERT INTO fornecimento VALUES (	5017	,	90001	,	2	,	210	,	'22/10/2021'	,	73855	,		'02/01/2023'	,	20	,	1.99	,	39.00	)	;
+INSERT INTO fornecimento VALUES (	5019	,	90001	,	2	,	124	,	'22/10/2021'	,	67198	,		'01/01/2023'	,	20	,	2.50	,	50.00	)	;
+INSERT INTO fornecimento VALUES (	5020	,	90001	,	2	,	122	,	'22/10/2021'	,	67198	,		'01/01/2023'	,	20	,	2.50	,	50.00	)	;
+INSERT INTO fornecimento VALUES (	5021	,	90001	,	2	,	158	,	'22/10/2021'	,	25509	,		'01/01/2023'	,	50	,	2.50	,	125.00	)	;
+INSERT INTO fornecimento VALUES (	5022	,	90001	,	2	,	159	,	'22/10/2021'	,	2457	,		'02/01/2023'	,	50	,	2.50	,	125.00	)	;
+INSERT INTO fornecimento VALUES (	5023	,	90001	,	2	,	154	,	'22/10/2021'	,	28974	,		'31/12/2022'    ,	20	,	5.99	,	100.00	)	;
+INSERT INTO fornecimento VALUES (	5024	,	90001	,	2	,	155	,	'22/10/2021'	,	2300	,		'31/12/2022'	,	50	,	4.50	,	225.00	)	;
+INSERT INTO fornecimento VALUES (	5025	,	90001	,	2	,	160	,	'22/10/2021'	,	1242	,		'31/12/2022'	,	50	,	4.50	,	225.00	)	;
+INSERT INTO fornecimento VALUES (	5026	,	90001	,	2	,	168	,	'22/10/2021'	,	3495	,		'31/12/2022'	,	20	,	1.50	,	30.00	)	;
+INSERT INTO fornecimento VALUES (	5027	,	90001,	2,			205,	'22/10/2021'	,	73855		,		'02/01/2023',	20,	1.99,		39.00)	;
+
+INSERT INTO fornecimento VALUES (	5028	,	90002	,	1	,	260	,	'22/11/2021'	,	2370	,		'31/12/2021'	,	48	,	5.60	,	268.80	)	;
+INSERT INTO fornecimento VALUES (	5029	,	90002	,	1	,	246	,	'22/11/2021'	,	1282	,		'31/12/2021'	,	100	,	1.99	,	199.00	)	;
+INSERT INTO fornecimento VALUES (	5030	,	90002	,	1	,	249	,	'22/11/2021'	,	3425	,		'31/12/2021'	,	100	,	1.99	,	199.00	)	;
+INSERT INTO fornecimento VALUES (	5031	,	90002	,	1	,	258	,	'22/11/2021'	,	2070	,		'31/12/2021'	,	48	,	5.60	,	268.80	)	;
+INSERT INTO fornecimento VALUES (	5032	,	90002	,	1	,	254	,	'22/11/2021'	,	2170	,		'31/12/2021'	,	48	,	5.00	,	240.00	)	;
+
+/*ID PEDIDO, NUM NOTA, DATA, VALOR T*/
+
+-- População tabela pedido e tabela item
+
+INSERT INTO pedido VALUES ( 1, 100.000, '01-05-2021', 199.9)
+INSERT INTO item VALUES ( 300, 1, 124, 10, 3.50, 100.000)
+INSERT INTO item VALUES ( 301, 1, 129, 5, 3.50, 100.000)
+INSERT INTO item VALUES ( 302, 1, 130, 5, 3.50, 100.000)
+INSERT INTO item VALUES ( 303, 1, 132, 10, 2.99, 100.000)
+INSERT INTO item VALUES ( 304, 1, 158, 25, 4.00, 100.000)
+
+INSERT INTO pedido VALUES ( 2, 101.000, '01-06-2021', 31.47)
+INSERT INTO item VALUES ( 305, 2, 129, 1, 3.50, 101.000)
+INSERT INTO item VALUES ( 306, 2, 130, 2, 3.50, 101.000)
+INSERT INTO item VALUES ( 307, 2, 132, 3, 2.99, 101.000)
+INSERT INTO item VALUES ( 308, 2, 158, 2, 4.00, 101.000)
+INSERT INTO item VALUES ( 309, 2, 159, 1, 4.00, 101.000)
+
+INSERT INTO pedido VALUES ( 3, 102.000, '01-07-2021', 19.29)
+INSERT INTO item VALUES ( 310, 3, 130, 1, 3.50, 102.000)
+INSERT INTO item VALUES ( 311, 3, 132, 1, 2.99, 102.000)
+INSERT INTO item VALUES ( 312, 3, 158, 1, 4.00, 102.000)
+INSERT INTO item VALUES ( 313, 3, 159, 1, 4.00, 102.000)
+INSERT INTO item VALUES ( 314, 3, 160, 1, 6.00, 102.000)
+
+INSERT INTO pedido VALUES ( 4, 103.000, '01-08-2021', 33.98)
+INSERT INTO item VALUES ( 315, 4, 132, 2, 2.99, 103.000)
+INSERT INTO item VALUES ( 316, 4, 158, 3, 4.00, 103.000)
+INSERT INTO item VALUES ( 317, 4, 159, 1, 4.00, 103.000)
+INSERT INTO item VALUES ( 318, 4, 160, 1, 6.00, 103.000)
+INSERT INTO item VALUES ( 319, 4, 168, 2, 3.00, 103.000)
+
+INSERT INTO pedido VALUES ( 5, 104.000, '01-09-2021', 26.99)
+INSERT INTO item VALUES ( 320, 5, 158, 1, 4.00, 104.000)
+INSERT INTO item VALUES ( 321, 5, 159, 2, 4.00, 104.000)
+INSERT INTO item VALUES ( 322, 5, 160, 1, 6.00, 104.000)
+INSERT INTO item VALUES ( 323, 5, 168, 2, 3.00, 104.000)
+INSERT INTO item VALUES ( 324, 5, 210, 1, 2.99, 104.000)
+
+INSERT INTO pedido VALUES ( 6, 105.000, '01-10-2021', 28.99)
+INSERT INTO item VALUES ( 325, 6, 159, 2, 4.00, 105.000)
+INSERT INTO item VALUES ( 326, 6, 160, 1, 6.00, 105.000)
+INSERT INTO item VALUES ( 327, 6, 168, 2, 3.00, 105.000)
+INSERT INTO item VALUES ( 328, 6, 210, 1, 2.99, 105.000)
+INSERT INTO item VALUES ( 329, 6, 212, 1, 6.00, 105.000)
+
+INSERT INTO pedido VALUES ( 7, 106.000, '01-11-2021', 33.99)
+INSERT INTO item VALUES ( 330, 7, 124, 2, 3.50, 106.000)
+INSERT INTO item VALUES ( 331, 7, 160, 2, 6.00, 106.000)
+INSERT INTO item VALUES ( 332, 7, 168, 2, 3.00, 106.000)
+INSERT INTO item VALUES ( 333, 7, 210, 1, 2.99, 106.000)
+INSERT INTO item VALUES ( 334, 7, 212, 1, 6.00, 106.000)
+
+INSERT INTO pedido VALUES ( 8, 107.000, '01-12-2020', 37.99)
+INSERT INTO item VALUES ( 335, 8, 124, 3, 3.50, 107.000)
+INSERT INTO item VALUES ( 336, 8, 129, 1, 3.50, 107.000)
+INSERT INTO item VALUES ( 337, 8, 168, 1, 3.00, 107.000)
+INSERT INTO item VALUES ( 338, 8, 210, 1, 2.99, 107.000)
+INSERT INTO item VALUES ( 339, 8, 212, 3, 6.00, 107.000)
+
+INSERT INTO pedido VALUES ( 9, 108.000, '01-01-2021', 37.49)
+INSERT INTO item VALUES ( 340, 9, 124, 1, 3.50, 108.000)
+INSERT INTO item VALUES ( 341, 9, 129, 1, 3.50, 108.000)
+INSERT INTO item VALUES ( 342, 9, 130, 1, 3.50, 108.000)
+INSERT INTO item VALUES ( 343, 9, 210, 1, 2.99, 108.000)
+INSERT INTO item VALUES ( 344, 9, 212, 4, 6.00, 108.000)
+
+INSERT INTO pedido VALUES ( 10, 109.000, '01-02-2021', 63.47)
+INSERT INTO item VALUES ( 345, 10, 124, 5, 3.50, 109.000)
+INSERT INTO item VALUES ( 346, 10, 129, 1, 3.50, 109.000)
+INSERT INTO item VALUES ( 347, 10, 130, 1, 3.50, 109.000)
+INSERT INTO item VALUES ( 348, 10, 132, 3, 2.99, 109.000)
+INSERT INTO item VALUES ( 349, 10, 212, 4, 6.00, 109.000)
+INSERT INTO item VALUES ( 350, 10, 159, 1, 6.00, 109.000)
+
+INSERT INTO pedido VALUES ( 11, 110.000, '30-11-2021', 926.00)
+INSERT INTO item VALUES ( 351, 11, 260, 24, 8.00, 110.000);
+INSERT INTO item VALUES ( 352, 11, 246, 50, 3.50, 110.000);
+INSERT INTO item VALUES ( 353, 11, 249, 50, 3.50, 110.000);
+INSERT INTO item VALUES ( 354, 11, 258, 24, 8.00, 110.000);
+INSERT INTO item VALUES ( 355, 11, 254, 24, 5.00, 110.000);
+
+ALTER TABLE item ADD COLUMN num_notafiscal_venda CHAR(50);
+
+-- População tabela Descarte
+INSERT INTO descarte VALUES ( 800, 212, 'Descarte item caixa estourada', 2);
+INSERT INTO descarte VALUES ( 802, 101, 'Descarte garrafa rachada', 1);
+INSERT INTO descarte VALUES ( 802, 125, 'Descarte garrafa rachada', 1);
+INSERT INTO descarte VALUES ( 802, 130, 'Descarte garrafa rachada', 1);
+
+-- População tabela Devolução
+ALTER TABLE devolucao ALTER COLUMN tipo_devo TYPE VARCHAR (4);
+INSERT INTO devolucao VALUES (1,103, 'forn','Produto não solicitado',100 );
+INSERT INTO devolucao VALUES (2,106, 'forn','50 unidades de produto a mais',50)
+
+Requisito 03 - Permitir troca de produtos. SQL
+
+-- População tabela troca
+ALTER TABLE troca ALTER COLUMN descr_troca TYPE VARCHAR(100)
+INSERT INTO troca VALUES (901,1,'Cliente solicita troca do produto por outro mais gelado', 'cli',159 )
+INSERT INTO troca VALUES (902,1,'Cliente solicita troca de sabor do produto, de laranja por morango', 'cli',210 )
+INSERT INTO troca VALUES (903,6,'Lata vazia', 'forn',140 )
+
+-- População tabela estoque
+select * from estoque
+ALTER TABLE estoque ALTER COLUMN estoque_min TYPE integer
+ALTER TABLE estoque ALTER COLUMN estoque_max TYPE integer
+ALTER TABLE estoque DROP COLUMN valor_qtd_prod
+INSERT INTO estoque VALUES (1,101,current_timestamp(2),100,1,99,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (2,103,current_timestamp(2),100,100,0,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (3,110,current_timestamp(2),50,0,50,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (4,125,current_timestamp(2),40,1,39,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (5,122,current_timestamp(2),80,0,80,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (6,127,current_timestamp(2),20,0,20,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja',20,50);
+INSERT INTO estoque VALUES (7,120,current_timestamp(2),10,0,10,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja',20,50);
+INSERT INTO estoque VALUES (8,107,current_timestamp(2),100,0,100,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (9,106,current_timestamp(2),100,50,50,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (10,109,current_timestamp(2),50,0,50,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (11,140,current_timestamp(2),50,6,44,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (12,142,current_timestamp(2),50,01,49,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (13,212,current_timestamp(2),20,15,05,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja',20,50);
+INSERT INTO estoque VALUES (14,132,current_timestamp(2),20,19,01,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja',20,50);
+INSERT INTO estoque VALUES (15,130,current_timestamp(2),10,10,0,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja',20,50);
+INSERT INTO estoque VALUES (16,129,current_timestamp(2),10,09,01,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 20,50);
+INSERT INTO estoque VALUES (17,210,current_timestamp(2),20,04,16,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 20,50);
+INSERT INTO estoque VALUES (18,124,current_timestamp(2),40,21, 19,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 20,50);
+INSERT INTO estoque VALUES (19,158,current_timestamp(2),50,32,18,'Rua General Molina,35 Jd.Dabril- Armazém Reserva',20,50);
+INSERT INTO estoque VALUES (20,159,current_timestamp(2),50,08,42,'Rua General Molina,35 Jd.Dabril- Armazém Reserva', 20,50);
+INSERT INTO estoque VALUES (21,154,current_timestamp(2),20,0,20,'Rua General Molina,35 Jd.Dabril- Armazém Reserva', 20,50);
+INSERT INTO estoque VALUES (22,160,current_timestamp(2),50,06,44,'Rua General Molina,35 Jd.Dabril- Armazém Reserva', 20,50);
+INSERT INTO estoque VALUES (23,168,current_timestamp(2),20,09,11,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 20,50);
+INSERT INTO estoque VALUES (24,155,current_timestamp(2),20,0,20,'Rua General Molina,35 Jd.Dabril- Armazém Reserva', 20,50);
+INSERT INTO estoque VALUES (25,205,current_timestamp(2),20,01,19,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 20,50);
+INSERT INTO estoque VALUES (26,260,current_timestamp(2),48,24,24,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 20,96);
+INSERT INTO estoque VALUES (27,258,current_timestamp(2),48,24,24,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 20,96);
+INSERT INTO estoque VALUES (28,254,current_timestamp(2),48,24,24,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 20,96);
+INSERT INTO estoque VALUES (29,246,current_timestamp(2),100,50,50,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 50,150);
+INSERT INTO estoque VALUES (30,249,current_timestamp(2),100,30,50,'Praça Thomas Coelho de Almeida,35 Jd.Dabril- Loja', 50,150);
+
+12.	Implementação de Consultas SQL
+
+Requisito- Permissão para Inventário. SQL
+
+SELECT c.cod_prod as "Código Produto", p.prod_nome as Produto, p.prod_descr AS Descrição, 
+c.qtd_total AS "Quantidade disponivel em estoque"
+From estoque c JOIN produto p
+ON (c.cod_prod = p.cod_prod) 
+--Funcionário deve analisar quantidade no sistema e conferir a quantidade física em estoque
+
+Requisito- Gerar relatório de controle de estoque mínimo. SQL
+
+SELECT INITCAP('Data hora contagem: '||e.dt_hora_controle||', Cód. do produto: '
+||e.cod_prod||', Nome do produto: '||p.prod_nome||', Quantidade disponivel em estoque:'
+|| e.qtd_total||' unidades.') AS "Relação de produtos com menos de 20 unidades"
+FROM estoque e inner join produto p
+ ON (e.cod_prod = p.cod_prod)
+ WHERE e.qtd_total <=20 ;
+
+Requisito- Gerar controle pela data de validade. SQL
+
+-- Produtos com vencimento em 3 meses
+SELECT c.cod_prod, p.prod_nome, p.prod_marca, c.dt_validade, c.valor_total
+From fornecimento c inner join produto p
+on (c.cod_prod=p.cod_prod)
+WHERE dt_validade < current_date + INTERVAL '3' MONTH
+
+-- Produtos com vencimento em 6 meses
+SELECT c.cod_prod, p.prod_nome, p.prod_marca, c.dt_validade, c.valor_total
+From fornecimento c inner join produto p
+on (c.cod_prod=p.cod_prod)
+WHERE dt_validade < current_date + INTERVAL '6' MONTH
+
+-- Produtos com vencimento em 12 meses
+SELECT c.cod_prod, p.prod_nome, p.prod_marca, c.dt_validade, c.valor_total
+From fornecimento c inner join produto p
+on (c.cod_prod=p.cod_prod)
+WHERE dt_validade < current_date + INTERVAL '1' YEAR
+
+-- Produtos com vencimento em 24 meses
+SELECT c.cod_prod, p.prod_nome, p.prod_marca, c.dt_validade, c.valor_total
+From fornecimento c inner join produto p
+on (c.cod_prod=p.cod_prod)
+WHERE dt_validade < current_date + INTERVAL '2' YEAR
+
+-- Requisito- Gerar relatório com dados do fornecedor.
+SELECT ('Nome Fornecedor: '||forn_nome||', Telefone: '||forn_fone|| ', E-mail:'||forn_email) AS "Dados Fornecedor"
+FROM fornecedor
+WHERE forn_tipo = 'PJ';
+
