@@ -1,0 +1,20 @@
+Modelo Lógico - Esquema de relações
+
+categoria (cod_catg(PK), categoria, cod_prod(FK), descr_catg) cod_prod referencia produto
+
+produto (cod_prod(PK), prod_nome, prod_descr, cod_catg(FK), prod_medida, qtd_medida, estoque_min, estoque_max, prod_marca)cod_catg referencia categoria
+
+fornecedor (cod_forn(PK), forn_tipo, forn_email, forn_fone, forn_end, forn_nome)
+
+estoque (id_estoque(PK), cod_prod(FK), dt_hora_controle, qtd_entrada, qtd_saida, qtd_total, end_estoque, valor_qtd_prod)cod_prod referencia produto
+
+Troca (id_troca, cod_prod, descr_troca, tipo_troca qtd_prod) cod_prod referencia produto
+
+Descarte (id_desc, cod_prod, descr_desc, qtd_prod)cod_prod referencia produto
+Devolucao (id_dev, cod_prod, descr_devo  tipo_devo, qtd_prod)cod_prod referencia produto
+
+pedido (id_pedido(PK), num_notafiscal_venda, dt_hora_pedido, valor_total)(cod_cli) referencia cliente 
+
+item (id_pedido(PK) (FK), cod_prod(PK) (FK), qtde_prod, valor_venda_uni, num_notafiscal_venda)id_pedido referencia pedido, cod_prod referencia produto
+
+fornecimento (id_fornecto(PK), num_notafiscal_compra, cod_forn(FK), cod_prod(FK), dt_hora_entrada,num_lote, dt_validade, qtde_fornecto, valor_custo_uni, valor_total)cod_forn referencia fornecedor, cod_prod referencia produto
