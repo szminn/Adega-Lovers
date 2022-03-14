@@ -1,0 +1,424 @@
+– Conexão Postgres com código Python.
+
+import tkinter as tk
+import PySimpleGUI as sg
+from PyQt5.QtSql import QSqlDatabase, QSqlQuery
+import sys
+import psycopg2
+
+def limpar1():
+    window['-COD1-'].update('')
+    window['-NOME1-'].update('')
+    window['-DESC-'].update('')
+    window['-CDC-'].update('')
+    window['-QDM-'].update('')
+    window['-MEP-'].update('')
+    window['-MAP-'].update('')
+    #window['-IDI-'].update('')
+    #window['-VDVI-'].update('')
+    #window['-QTI-'].update('')
+    #window['-DDV-'].update('')
+
+def limpar2():
+    window['-COD2-'].update('')
+    window['-NOME2-'].update('')
+    window['-IDI-'].update('')
+    window['-VDVI-'].update('')
+    window['-QTI-'].update('')
+    window['-DDV-'].update('')
+
+def atualiza1():
+    if len(lista1) == 0:
+        limpar1()
+    else:
+        print(lista1[indice1])
+        window['-COD1-'].update(lista1[indice1][0])
+        window['-NOME1-'].update(lista1[indice1][1])
+        window['-DESC-'].update(lista1[indice1][2])
+        window['-CDC-'].update(lista1[indice1][3])
+        window['-QDM-'].update(lista1[indice1][4])
+        window['-MEP-'].update(lista1[indice1][5])
+        window['-MAP-'].update(lista1[indice1][6])
+        #window['-IDI-'].update(lista[indice][7])
+        #window['-VDVI-'].update(lista[indice][8])
+        #window['-QTI-'].update(lista[indice][9])
+        #window['-DDV-'].update(lista[indice][10])
+
+def atualiza2():
+    if len(lista2) == 0:
+        limpar2()
+    else:
+        print(lista2[indice2])
+        window['-COD2-'].update(lista2[indice2][0])
+        window['-NOME2-'].update(lista2[indice2][1])
+        window['-IDI-'].update(lista2[indice2][2])
+        window['-VDVI-'].update(lista2[indice2][3])
+        window['-QTI-'].update(lista2[indice2][4])
+        window['-DDV-'].update(lista2[indice2][5])
+
+def todos():
+    global indice1
+    global lista
+    resposta = []
+    with con:
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM produto;")
+            resposta = cursor.fetchall()
+    lista1.clear()
+    for i in range(len(resposta)):
+        lista1.append(list(resposta[i]))
+
+    sg.popup('Quantidade de registros: ' + str(len(resposta)))
+    indice1 = 0
+    atualiza1()
+
+# Inicialização BD
+con = psycopg2.connect(host="localhost", database="Trabson PI", user="postgres", password="brenopostgre")
+'''with con:
+    with con.cursor() as cursor:
+        cursor.execute("""
+        SET DATESTYLE TO postgres, DMY ;  
+
+        --1 Tabela Categoria
+        DROP TABLE IF EXISTS categoria CASCADE;
+        CREATE TABLE categoria (
+        cod_catg INTEGER PRIMARY KEY,
+        categoria VARCHAR (50) NOT NULL CHECK (categoria IN ('Bebida não alcoólica','Bebida alcoólica')),
+        descr_catg VARCHAR(200));
+
+        --2 Tabela Produto
+        DROP TABLE IF EXISTS produto CASCADE;
+        CREATE TABLE produto (
+        cod_prod INT  PRIMARY KEY,
+        prod_nome VARCHAR(30),
+        prod_descr VARCHAR(50),
+        cod_catg INT, FOREIGN KEY (cod_catg) REFERENCES  categoria,
+        qtd_medida NUMERIC(3,1),
+        prod_medida VARCHAR(10),CHECK (prod_medida IN ('litro', 'litros', 'ml')),
+        prod_marca VARCHAR (100));
+
+        --3 Tabela Fornecedor
+        DROP TABLE IF EXISTS fornecedor CASCADE;
+        CREATE TABLE fornecedor (
+        cod_forn INT PRIMARY KEY,
+        forn_tipo  CHAR(2) NOT NULL CHECK (forn_tipo IN ('PJ', 'PF')),
+        forn_email VARCHAR(30),
+        forn_fone NUMERIC(11),
+        forn_end VARCHAR(100) ,
+        forn_nome VARCHAR(100) NOT NULL);
+
+        --4 Tabela Fornecimento
+        DROP TABLE IF EXISTS fornecimento CASCADE;
+        CREATE TABLE fornecimento (
+            id_fornecto INT  PRIMARY KEY, 
+            num_notafiscal_compra NUMERIC(50),
+            cod_forn  INTEGER, FOREIGN KEY (cod_forn) REFERENCES  fornecedor,
+            cod_prod  INTEGER, FOREIGN KEY (cod_prod) REFERENCES  produto,
+            dt_entrada DATE,
+            num_lote VARCHAR (30),
+            dt_validade DATE,
+            qtd_prod NUMERIC(7,2),
+            valor_custo_uni NUMERIC(7,2),
+            valor_total NUMERIC(7,2)
+        );
+
+        --5 Tabela Estoque
+        DROP TABLE IF EXISTS estoque CASCADE;
+        CREATE TABLE estoque (
+        id_estoque INT  PRIMARY KEY,
+        cod_prod INT, FOREIGN KEY (cod_prod) REFERENCES  produto ,
+        dt_hora_controle TIMESTAMP NOT NULL,
+        qtd_entrada INTEGER NOT NULL,
+        qtd_saida INTEGER NOT NULL,
+        qtd_total INTEGER NOT NULL,
+        end_estoque VARCHAR(100) NOT NULL,
+        estoque_min integer,
+        estoque_max integer
+        );
+
+        --6 Tabela Pedido
+        DROP TABLE IF EXISTS pedido CASCADE;
+        CREATE TABLE pedido (
+        id_pedido INT PRIMARY KEY,
+        num_notafiscal_venda CHAR(50),
+        dt_hora_pedido TIMESTAMP NOT NULL,
+        valor_total NUMERIC(7,2));
+
+        --7 Tabela Item
+        DROP TABLE IF EXISTS item CASCADE;
+        CREATE TABLE item (
+        id_item integer primary key,
+            id_pedido INTEGER, FOREIGN KEY (id_pedido) REFERENCES  pedido  ,
+            cod_prod  INTEGER,FOREIGN KEY (cod_prod) REFERENCES  produto ,
+            quantidade NUMERIC(7,2),
+            valor_venda_uni NUMERIC(7,2),
+        num_notafiscal_venda NUMERIC(7,2));
+
+        --8 Tabela de Troca
+        DROP TABLE IF EXISTS troca CASCADE;
+        CREATE TABLE troca (
+            id_troca INT PRIMARY KEY,
+            qtd_prod NUMERIC(7,2),
+            descr_troca VARCHAR(100),
+            tipo_troca CHAR (4) CHECK( tipo_troca IN ('forn', 'cli')),
+            cod_prod INT, FOREIGN KEY (cod_prod) REFERENCES  produto  );
+
+        --9 Tabela de Descarte
+        DROP TABLE IF EXISTS descarte CASCADE;
+        CREATE TABLE descarte (
+            id_desc  INT PRIMARY KEY,
+            cod_prod INT, FOREIGN KEY (cod_prod) REFERENCES  produto,
+            descr_desc VARCHAR(50),
+            qtd_prod NUMERIC(7,2));
+
+        --10 Tabela de Devolucao 
+        DROP TABLE IF EXISTS devolucao CASCADE;
+        CREATE TABLE devolucao (
+            id_dev INT  PRIMARY KEY,
+            cod_prod INT , FOREIGN KEY (cod_prod) REFERENCES  produto  ,
+            tipo_devo CHAR NOT NULL CHECK (tipo_devo IN ('forn', 'cli')),
+            descr_devo VARCHAR(50),
+            qtd_prod NUMERIC(7,2)
+        );
+        """)'''
+
+#lista = []
+#indice = 0
+lista1 = []
+indice1 = 0
+lista2 = []
+indice2 = 0
+
+def make_win3():
+    sg.theme('LightGreen5')
+    layout = [  [sg.Text('Usuário:', size=(8, 1)), sg.InputText(key='-USER-', size=(15, 1))],
+                [sg.Text('Senha:', size=(8, 1)), sg.InputText('', size=(15, 1), key='-PASSWORD-', password_char='*')],
+                [sg.Button('Entrar', size=(10, 1), key='-ENTRAR-')]   ]
+    return sg.Window('Login', layout, location=(550, 290), finalize=True)
+def make_win1():
+    sg.theme('LightGreen5')
+    layout = [
+             [sg.Text("Código Produto:", size=(19, 1)),
+             sg.InputText(size=([40], 1), key="-COD1-", focus=True)],
+             [sg.Text("Nome:", size=(19, 1)),
+             sg.InputText(size=(40, 1), key="-NOME1-", focus=False)],
+             [sg.Text("Descrição:", size=(19, 1)),
+             sg.InputText(size=(40, 1), key="-DESC-", focus=False)],
+             [sg.Text("Código da Categoria:", size=(19, 1)),
+             sg.InputText(size=(40, 1), key="-CDC-", focus=False)],
+             [sg.Text("Quantidade da Medida:", size=(19, 1)),
+             sg.InputText(size=(40, 1), key="-QDM-", focus=False)],
+             [sg.Text("Medida do Produto:", size=(19, 1)),
+             sg.InputText(size=(40, 1), key="-MEP-", focus=False)],
+             [sg.Text("Marca do Produto:", size=(19, 1)),
+             sg.InputText(size=(40, 1), key="-MAP-", focus=False)],
+             [sg.Button('Limpar', size=(17, 1), key="-LIMPAR1-"),
+             sg.Button('Inserir', size=(17, 1), key="-INSERIR-"),
+             sg.Button('Atualizar', size=(17, 1), key="-ATUALIZAR-")],
+             [sg.Button('Remover', size=(17, 1), key="-REMOVER-"),
+             sg.Button('Procurar', size=(17, 1), key="-PROCURAR-"),
+             sg.Button('Todos', size=(17, 1), key="-TODOS-")],
+             [sg.Button('<<', size=(17, 1), key="-<<1-"),
+             sg.Button('Gerenciamento', size=(17, 1), key="-GERENCIAMENTO-"),
+             sg.Button('>>', size=(17, 1), key="->>1-")]
+             ]  
+    return sg.Window('Produtos', layout, location=(425, 200), finalize=True)  
+def make_win2():
+    sg.theme('LightGreen5')
+    layout = [
+             [sg.Text("Código Produto (P):", size=(19, 1)),
+             sg.InputText(size=([40], 1), key="-COD2-", focus=True)],
+             [sg.Text("Nome (P):", size=(19, 1)),
+             sg.InputText(size=(40, 1), key="-NOME2-", focus=False)],
+             [sg.Text("ID Item:", size=(19, 1)),
+             sg.InputText(size=([40], 1), key="-IDI-", focus=False)],
+             [sg.Text("Valor de Venda:", size=(19, 1)),
+             sg.InputText(size=([40], 1), key="-VDVI-", focus=False)],
+             [sg.Text("Quantidade Total:", size=(19, 1)),
+             sg.InputText(size=([40], 1), key="-QTI-", focus=False)],
+             [sg.Text("Data de Validade:", size=(19, 1)),
+             sg.InputText(size=(40, 1), key="-DDV-", focus=False)],
+             [sg.Button('Limpar', size=(17, 1), key="-LIMPAR2-"),
+             sg.Button('Indicador', size=(17, 1), key="-INDICADOR-"),
+             sg.Button('Validade', size=(17, 1), key="-VALIDADE-")],
+             [sg.Button('<<', size=(17, 1), key="-<<2-"),
+             sg.Button('Home', size=(17, 1), key="-HOME-"),
+             sg.Button('>>', size=(17, 1), key="->>2-")]
+             ]
+    return sg.Window('Gerenciamento', layout, location=(425, 200), finalize=True)
+    #, disabled = true, readOnly = true
+    #, disabled="disabled"
+    #, readonly="readonly"   
+
+window3, window1, window2 = make_win3(), None, None # start off with 1 window open
+#make_win3.close()
+#window3 = make_win3(), None
+
+#app = tk.Tk()
+
+#def callback(event):
+#    if labelUser == 'breno' and labelPass == 'admin':
+#        window1 = make_win1()
+#        window3.close()
+#    else:
+#        window['-USER-'].update( '' )
+#        window['-PASSWORD-'].update( '' )
+#        tk.popup('Usuário ou senha incorretos', location=(560, 300)) #, size=(400,400)
+
+# Run the Event Loop    
+while True:
+
+    #make_win1.resize(make_win2.sizeHint().width,
+    #make_win1.size().height() + content.sizeHint().height());
+    #self.move(QtGui.QApplication.desktop().screen().rect().center()- self.rect().center())
+#    app = tk.Tk()
+#    labelUser = tk.Label(app,
+#                    text = "Usuário:")
+#    labelUser.grid(column=0, row=0, ipadx=5, pady=5, sticky=tk.W+tk.N)
+#
+#    labelPass = tk.Label(app,
+#                    text = "Senha:")
+#    labelPass.grid(column=0, row=1, ipadx=5, pady=5, sticky=tk.W+tk.S)
+#
+#    entryWidth = tk.Entry(app, width=20)
+#    entryHeight = tk.Entry(app, width=20)
+#
+#    entryUser.grid(column=1, row=0, padx=10, pady=5, sticky=tk.N)
+#    entryPass.grid(column=1, row=1, padx=10, pady=5, sticky=tk.S)
+#
+#    resultButton = tk.Button(app, text = 'Entrar')
+#    resultButton.grid(column=0, row=2, pady=10, sticky=tk.W)
+#
+#    app.bind('<Return>', callback)
+
+    window, event, values = sg.read_all_windows()
+    if event == sg.WIN_CLOSED:
+        break
+    elif event == '-ENTRAR-' and not window2:
+        if values['-USER-'] == 'breno' and  values['-PASSWORD-'] == 'admin':
+            window1 = make_win1()
+            window3.close()
+        else:
+            window['-USER-'].update( '' )
+            window['-PASSWORD-'].update( '' )
+            sg.popup('Usuário ou senha incorretos', location=(560, 300)) #, size=(400,400)
+            #sg.popup.geometry( "300x50" )
+    elif event == '-GERENCIAMENTO-':
+        window2 = make_win2()
+        window1.close()
+    elif event == '-HOME-':
+        window1 = make_win1()
+        window2.close()    
+    elif event == "-LIMPAR1-":
+        limpar1()
+    elif event == "-LIMPAR2-":
+        limpar2()
+    elif event == "-INSERIR-":
+        with con:
+            with con.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO produto (cod_prod, prod_nome, prod_descr, cod_catg, qtd_medida, prod_medida, prod_marca) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+                    (values['-COD1-'], values['-NOME1-'], values['-DESC-'], values['-CDC-'], values['-QDM-'],
+                    values['-MEP-'], values['-MAP-'])
+                    #INSERT INTO produto (cod_prod, prod_nome,) VALUES (%s, %s);",
+                    #(values['-VDVI-'], values['-QTD-'], values['-DDV-'])
+                    # INSERT INTO produto (cod_prod, prod_nome,) VALUES (%s, %s);",
+                    # (values['-VDVI-'], values['-QTD-'], values['-DDV-'])
+                    # INSERT INTO produto (cod_prod, prod_nome,) VALUES (%s, %s);",
+                    # (values['-VDVI-'], values['-QTD-'], values['-DDV-'])
+                )
+        limpar1()
+    elif event == "-ATUALIZAR-":
+        with con:
+            with con.cursor() as cursor:
+                #cursor.execute("UPDATE produto SET prod_nome = %s, prod_descr = %s, cod_catg = %s, qtd_medida = %s, prod_medida = %s, prod_marca = %s WHERE cod_prod = %s",
+                               #(values['-NOME1-'], values['-DESC-'], values['-CDC-'], values['-QDM-'], values['-MEP-'], values['-MAP-']), values['-COD1-'])
+        #lista1[indice1] = [values['-COD1-'], values['-NOME1-'], values['-DESC-'], values['-CDC-'], values['-QDM-'], values['-MEP-'], values['-MAP-']]
+                cursor.execute("UPDATE produto SET prod_nome = %s, prod_descr = %s, cod_catg = %s, qtd_medida = %s, prod_medida = %s, prod_marca = %s WHERE cod_prod = %s", 
+                               (values['-NOME1-'], values['-DESC-'], values['-CDC-'], values['-QDM-'], values['-MEP-'], values['-MAP-'], values['-COD1-']))
+    elif event == "-REMOVER-":
+        with con:
+            with con.cursor() as cursor:
+                cursor.execute("DELETE FROM produto WHERE cod_prod = %s", (values['-COD1-'],))
+        lista1.pop(indice1)
+        indice1 -= 1
+        atualiza1()
+    elif event == "-PROCURAR-":
+        with con:
+            with con.cursor() as cursor:
+                cursor.execute("SELECT * FROM produto WHERE prod_nome LIKE %s;",
+                               ('%' + values['-NOME1-'] + '%',))
+                resposta = cursor.fetchall()
+                lista1.clear()
+                for i in range(len(resposta)):
+                    lista1.append(list(resposta[i]))
+                sg.popup('Quantidade de registros: ' + str(len(resposta)))
+                indice1 = 0
+                atualiza1()
+    elif event == "-INDICADOR-":
+        with con:
+            with con.cursor() as cursor:
+                cursor.execute("SELECT po.cod_prod, po.prod_nome, it.id_item, it.valor_venda_uni, et.qtd_total, fm.dt_validade FROM produto po INNER JOIN estoque et ON (po.cod_prod = et.cod_prod) JOIN item it ON (po.cod_prod = it.cod_prod) JOIN fornecimento fm ON (po.cod_prod = fm.cod_prod) WHERE et.qtd_total < 20",
+                              ('%' + values['-COD2-'] + '%', '%' + values['-NOME2-'] + '%', '%' + values['-IDI-'] + '%', '%' + values['-VDVI-'] + '%', '%' + values['-QTI-'] + '%',
+                                '%' + values['-DDV-'] + '%',)
+                              )
+                resposta = cursor.fetchall()
+                lista2.clear()
+                for i in range(len(resposta)):
+                    lista2.append(list(resposta[i]))
+                sg.popup('Valores: ' + str(len(resposta)))
+                indice2 = 0
+                atualiza2()
+    elif event == "-VALIDADE-":
+        with con:
+            with con.cursor() as cursor:
+                cursor.execute("SELECT po.cod_prod, po.prod_nome, it.id_item, it.valor_venda_uni, et.qtd_total, fm.dt_validade FROM produto po INNER JOIN estoque et ON (po.cod_prod = et.cod_prod) JOIN item it ON (po.cod_prod = it.cod_prod) JOIN fornecimento fm ON (po.cod_prod = fm.cod_prod) WHERE fm.dt_validade > fm.dt_validade - INTERVAL '30' DAY",
+                               ('%' + values['-COD2-'] + '%', '%' + values['-NOME2-'] + '%', '%' + values['-IDI-'] + '%', '%' + values['-VDVI-'] + '%', '%' + values['-QTI-'] + '%',
+                                '%' + values['-DDV-'] + '%',)
+                               )
+                               
+                               #('%' + values['-NOME-'] + '%',
+                                #'%' + values['-COD-'] + '%'
+                                #'%' + values['-IDI-'] + '%',
+                                #'%' + values['-VDVI-'] + '%',
+                                #'%' + values['-QTI-'] + '%',
+                                #'%' + values['-DDV-'] + '%',)
+                              
+                resposta = cursor.fetchall()
+                lista2.clear()
+                for i in range(len(resposta)):
+                    lista2.append(list(resposta[i]))
+                sg.popup('Valores: ' + str(len(resposta)))
+                indice2 = 0
+                atualiza2()
+    elif event == "-TODOS-":
+        todos()
+    elif event == "->>1-":
+        indice1 += 1
+        if indice1 >= len(lista1): indice1 = len(lista1) - 1
+        atualiza1()
+    elif event == "-<<1-":
+        indice1 -= 1
+        if indice1 <= 0: indice1 = 0
+        atualiza1()
+    elif event == "->>2-":
+        indice2 += 1
+        if indice2 >= len(lista2): indice2 = len(lista2) - 1
+        atualiza2()
+    elif event == "-<<2-":
+        indice2 -= 1
+        if indice2 <= 0: indice2 = 0
+        atualiza2()
+
+window.close()
+
+# Fazer as mudanças para a base persistente
+con.commit()
+
+# Fechar a comunicação com o servidor
+cursor.close()
+con.close()
+
+#window.close()
+#cursor.close()
+#con.close()
